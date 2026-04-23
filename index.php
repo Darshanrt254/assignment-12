@@ -8,10 +8,10 @@ $db_pass = getenv("DB_PASS") ?: '';
 $db_name = getenv("DB_NAME") ?: 'itc2026_ass10';
 $db_port = getenv("DB_PORT") ?: '3306';
 
-$conn = @new mysqli($db_host, $db_user, $db_pass, $db_name, (int)$db_port);
-$db_connected = true;
-
-if ($conn->connect_error) {
+try {
+    $conn = @new mysqli($db_host, $db_user, $db_pass, $db_name, (int)$db_port);
+    $db_connected = !$conn->connect_error;
+} catch (Exception $e) {
     $db_connected = false;
 }
 
@@ -152,14 +152,34 @@ $expectedMenu = [
     "Home", "Committee", "Important Dates", "Speakers", "Workshop",
     "Submission", "Special Session", "Registration", "Sponsorship", "Contact"
 ];
-$contentRows = [];
+// Hardcoded content for fallback
+$contentRows = [
+    'Home' => '<h2>ITC 2026</h2><p>International Tech Conference on Artificial Intelligence and Future Computing</p><div style="margin-top: 2rem;"><p><strong>Venue:</strong> Grand Convention Center, Tech City</p><p><strong>Date:</strong> November 15 - 18, 2026</p></div>',
+    'Committee' => '<h2>Committee</h2><div class="content-box"><h3>General Chairs</h3><ul class="styled-list"><li>Dr. Alan Turing, Global Tech University</li><li>Prof. Ada Lovelace, Data Science Institute</li></ul><h3 style="margin-top: 1.5rem;">Program Chairs</h3><ul class="styled-list"><li>Dr. John von Neumann, Institute for Advanced Study</li><li>Dr. Grace Hopper, CS Pioneers Org</li></ul></div>',
+    'Important Dates' => '<h2>Important Dates</h2><div class="content-box"><p>Please keep track of the following deadlines to ensure your participation in ITC 2026:</p><table><thead><tr><th>Event</th><th>Deadline</th></tr></thead><tbody><tr><td>Abstract Submission</td><td>August 1, 2026</td></tr><tr><td>Full Paper Submission</td><td>August 30, 2026</td></tr><tr><td>Notification of Acceptance</td><td>September 25, 2026</td></tr><tr><td>Camera-Ready Paper</td><td>October 10, 2026</td></tr><tr><td>Early Bird Registration</td><td>October 15, 2026</td></tr><tr><td>Conference Dates</td><td>November 15 - 18, 2026</td></tr></tbody></table></div>',
+    'Speakers' => '<h2>Keynote Speakers</h2><div class="grid-cards"><div class="card"><h3>Dr. Alan Turing</h3><p>Pioneer of AI</p><p><em>Topic: Rethinking Machine Intelligence</em></p></div><div class="card"><h3>Prof. Ada Lovelace</h3><p>Chief Data Scientist, Global Tech</p><p><em>Topic: Predictive Models in Global Computing</em></p></div><div class="card"><h3>Dr. Grace Hopper</h3><p>Lead Engineer, Quantum Systems</p><p><em>Topic: The Future of Quantum AI</em></p></div></div>',
+    'Workshop' => '<h2>Workshops</h2><div class="content-box"><p>Join our interactive workshops led by industry experts. Please note that seats are limited.</p><ul class="styled-list" style="margin-top: 1rem;"><li><strong>Workshop 1:</strong> Introduction to Quantum Machine Learning (Nov 15)</li><li><strong>Workshop 2:</strong> Ethical Guidelines in AI Development (Nov 15)</li><li><strong>Workshop 3:</strong> Building Scalable Data Pipelines (Nov 16)</li></ul><p style="margin-top: 1rem;"><em>Preregistration is required for all workshops.</em></p></div>',
+    'Submission' => '<h2>Paper Submission</h2><div class="content-box"><p>We invite researchers to submit their original work. All accepted papers will be published in the Conference Proceedings.</p><h3 style="margin-top: 1.5rem;">Submission Guidelines</h3><ul class="styled-list"><li>Papers must be written in English.</li><li>Maximum length: 8 pages, including references.</li><li>Formatting must follow the IEEE conference template.</li></ul><button class="btn-primary" style="margin-top: 1.5rem;">Go to Submission Portal</button></div>',
+    'Special Session' => '<h2>Special Sessions</h2><div class="content-box"><p>We are hosting a series of special sessions focusing on cutting-edge research topics. These aim to provide an inclusive platform for discussions.</p><ul class="styled-list" style="margin-top: 1rem;"><li>AI in Healthcare & Medicine</li><li>Sustainable Computing</li><li>Generative Models in Art and Design</li></ul><p style="margin-top: 1rem;">Researchers interested in leading a special session should contact the organizers by July 15, 2026.</p></div>',
+    'Registration' => '<h2>Registration</h2><div class="content-box"><p>Registration includes access to all keynotes, technical sessions, and networking events.</p><br><ul class="styled-list"><li><strong>Academic / Students:</strong> $150 (Early Bird) | $200 (Regular)</li><li><strong>Industry Professionals:</strong> $300 (Early Bird) | $400 (Regular)</li><li><strong>Listeners / Attendees:</strong> $100</li></ul><br><p><em>Note: At least one author of firmly accepted papers must register to secure publication.</em></p><div style="text-align: center; margin-top: 2rem;"><button class="btn-primary">Register Now</button></div></div>',
+    'Sponsorship' => '<h2>Sponsorship</h2><div class="content-box"><p>We welcome organizations to sponsor the ITC 2026. Sponsorship provides an excellent opportunity to showcase your brand to top researchers and industry professionals.</p><h3 style="margin-top: 1.5rem;">Sponsorship Tiers</h3><ul class="styled-list"><li><strong>Platinum:</strong> $10,000 (Includes premium booth, 5 free registrations, branding on all materials)</li><li><strong>Gold:</strong> $5,000 (Includes standard booth, 3 free registrations)</li><li><strong>Silver:</strong> $2,500 (Includes 1 free registration, logo on website)</li></ul></div>',
+    'Contact' => '<h2>Contact Us</h2><div class="content-box contact-content"><p>For any inquiries regarding the conference, paper submission, or sponsorship, please reach out to the organizing committee.</p><br><ul class="styled-list" style="list-style-type: none; padding-left: 0;"><li>📍 <strong>Address:</strong> Grand Convention Center, 123 Tech Avenue, Innovation City</li><li>📧 <strong>Email:</strong> info@itc2026.example.com</li><li>📞 <strong>Phone:</strong> +1 (555) 123-4567</li></ul><p style="margin-top: 2rem; text-align: center; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 1rem;">&copy; 2026 International Tech Conference. All rights reserved.</p></div>'
+];
 
 if ($db_connected) {
-    $res = @$conn->query("SELECT Menu, Content FROM conference_data");
-    if ($res) {
-        while($r = $res->fetch_assoc()) {
-            $contentRows[$r['Menu']] = $r['Content'];
+    try {
+        $res = @$conn->query("SELECT Menu, Content FROM conference_data");
+        if ($res && $res->num_rows > 0) {
+            $dbContent = [];
+            while($r = $res->fetch_assoc()) {
+                $dbContent[$r['Menu']] = $r['Content'];
+            }
+            if (count($dbContent) > 0) {
+                $contentRows = array_merge($contentRows, $dbContent);
+            }
         }
+    } catch (Exception $e) {
+        // Just use fallback array if query fails
     }
 }
 
